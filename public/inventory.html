@@ -589,7 +589,7 @@
   const totalDrinksEl = document.getElementById("totalDrinks");
   const uniqueDrinksEl = document.getElementById("uniqueDrinks");
 
-  let authenticatedPin = null;
+  let authenticatedPin = sessionStorage.getItem("adminPin");
   let autoRefreshInterval = null;
 
   function esc(s) {
@@ -624,6 +624,7 @@
 
       if (res.ok) {
         authenticatedPin = pin;
+        sessionStorage.setItem("adminPin", pin);
         pinOverlay.classList.add("hidden");
         mainContainer.classList.add("visible");
         await refresh();
@@ -642,6 +643,7 @@
 
   function logout() {
     authenticatedPin = null;
+    sessionStorage.removeItem("adminPin");
     stopAutoRefresh();
     pinOverlay.classList.remove("hidden");
     mainContainer.classList.remove("visible");
@@ -787,8 +789,25 @@
   refreshBtn.addEventListener("click", refresh);
   filterEl.addEventListener("change", refresh);
 
-  // Focus pin input on load
-  pinInput.focus();
+// Auto-login if PIN is already in sessionStorage
+  if (authenticatedPin) {
+    fetch("/api/auth", { method: "POST", headers: { "X-Admin-Pin": authenticatedPin } })
+      .then(r => {
+        if (r.ok) {
+          pinOverlay.classList.add("hidden");
+          mainContainer.classList.add("visible");
+          refresh();
+          startAutoRefresh();
+        } else {
+          sessionStorage.removeItem("adminPin");
+          authenticatedPin = null;
+          pinInput.focus();
+        }
+      })
+      .catch(() => pinInput.focus());
+  } else {
+    pinInput.focus();
+  }
 </script>
 
 </body>
