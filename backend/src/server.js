@@ -4,6 +4,7 @@ const rateLimit = require("express-rate-limit");
 const pool = require("./db");
 
 const app = express();
+app.set("trust proxy", 1); // Cloudflare Tunnel sets X-Forwarded-For; trust one proxy hop
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
