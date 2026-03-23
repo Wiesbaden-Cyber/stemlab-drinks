@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Stemlab Drinks - Inventory View</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e8ba3 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    /* PIN LOGIN SCREEN */
+    .pin-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e8ba3 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .pin-overlay.hidden {
+      display: none;
+    }
+
+    .pin-box {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      max-width: 400px;
+      width: 100%;
+    }
+
+    .pin-box h2 {
+      color: #1e293b;
+      margin-bottom: 8px;
+      font-size: 1.8rem;
+    }
+
+    .pin-box p {
+      color: #64748b;
+      margin-bottom: 24px;
+      font-size: 0.95rem;
+    }
+
+    .pin-input-group {
+      margin-bottom: 20px;
+    }
+
+    .pin-input-group input {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 1.1rem;
+      border-radius: 10px;
+      border: 2px solid #cbd5e1;
+      outline: none;
+      transition: all 0.2s;
+      letter-spacing: 0.1em;
+    }
+
+    .pin-input-group input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .pin-submit {
+      width: 100%;
+      padding: 14px;
+      font-size: 1.05rem;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    .pin-submit:hover {
+      background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .pin-error {
+      color: #dc2626;
+      font-size: 0.9rem;
+      margin-top: 12px;
+      display: none;
+    }
+
+    /* MAIN CONTAINER */
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+      display: none;
+    }
+
+    .container.visible {
+      display: block;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+      color: white;
+      padding: 30px;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .header .subtitle {
+      font-size: 0.95rem;
+      opacity: 0.9;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .logout-btn {
+      padding: 10px 20px;
+      font-size: 0.95rem;
+      border-radius: 8px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      backdrop-filter: blur(10px);
+    }
+
+    .logout-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .topbar {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      padding: 16px 30px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .topbar-left {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .last-updated {
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .filter-group label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    .filter-group select {
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      border-radius: 8px;
+      border: 2px solid #cbd5e1;
+      outline: none;
+      cursor: pointer;
+      background: white;
+      transition: all 0.2s;
+    }
+
+    .filter-group select:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .refresh-btn {
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      border-radius: 8px;
+      border: 2px solid #cbd5e1;
+      background: white;
+      color: #64748b;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .refresh-btn:hover {
+      border-color: #94a3b8;
+      background: #f8fafc;
+    }
+
+    .print-btn {
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      border-radius: 8px;
+      border: none;
+      background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    .print-btn:hover {
+      background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+      transform: translateY(-1px);
+    }
+
+    .links {
+      display: flex;
+      gap: 16px;
+    }
+
+    .links a {
+      font-size: 0.95rem;
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    
+    .links a:hover {
+      color: #1e40af;
+      text-decoration: underline;
+    }
+
+    .content {
+      padding: 30px;
+    }
+
+    .stats-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #2563eb;
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      color: #64748b;
+      font-weight: 600;
+    }
+
+    .section-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 16px;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    th {
+      background: #f8fafc;
+      color: #64748b;
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 16px 12px;
+      text-align: left;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    th.center,
+    td.center {
+      text-align: center;
+    }
+
+    th.right,
+    td.right {
+      text-align: right;
+    }
+
+    td {
+      padding: 16px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: middle;
+    }
+
+    tbody tr:hover {
+      background: #f8fafc;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .drink-name {
+      font-weight: 600;
+      font-size: 1.05rem;
+      color: #1e293b;
+    }
+
+    .quantity-badge {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+      color: white;
+      font-weight: 700;
+      font-size: 1.3rem;
+      min-width: 60px;
+    }
+
+    .category-tag {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #dbeafe;
+      color: #1e40af;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: 1px solid #bfdbfe;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      background: #f8fafc;
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      color: #64748b;
+    }
+
+    .empty-state-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #475569;
+      margin-bottom: 8px;
+    }
+
+    .empty-state-hint {
+      font-size: 0.9rem;
+      color: #94a3b8;
+    }
+
+    /* Print styles */
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+
+      .pin-overlay,
+      .header-actions,
+      .topbar,
+      .links,
+      .refresh-btn,
+      .print-btn {
+        display: none !important;
+      }
+
+      .container {
+        box-shadow: none;
+        max-width: 100%;
+      }
+
+      .header {
+        background: none;
+        color: black;
+        border-bottom: 3px solid #000;
+      }
+
+      table {
+        page-break-inside: avoid;
+      }
+
+      tr {
+        page-break-inside: avoid;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 1.6rem;
+      }
+
+      .stats-cards {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .topbar-left {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .links {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- PIN LOGIN OVERLAY -->
+<div class="pin-overlay" id="pinOverlay">
+  <div class="pin-box">
+    <h2>Staff Access Required</h2>
+    <p>Enter your PIN to access the inventory view</p>
+    <form id="pinForm" onsubmit="return false;">
+      <div class="pin-input-group">
+        <input 
+          type="password" 
+          id="pinInput" 
+          placeholder="Enter PIN" 
+          autocomplete="off"
+          autofocus
+        />
+      </div>
+      <button type="submit" class="pin-submit" id="pinSubmitBtn">Access Inventory View</button>
+      <div class="pin-error" id="pinError">Incorrect PIN. Please try again.</div>
+    </form>
+  </div>
+</div>
+
+<!-- MAIN CONTAINER -->
+<div class="container" id="mainContainer">
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <h1>Inventory View</h1>
+        <div class="subtitle">Aggregated drink quantities across all orders</div>
+      </div>
+      <div class="header-actions">
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="last-updated" id="lastUpdated">Loading inventory...</div>
+      <div class="filter-group">
+        <label>Status:</label>
+        <select id="filter">
+          <option value="new" selected>New Orders Only</option>
+          <option value="in_progress">In Progress Only</option>
+          <option value="new,in_progress">New + In Progress</option>
+          <option value="">All Orders</option>
+        </select>
+      </div>
+      <button class="refresh-btn" id="refreshBtn">Refresh</button>
+      <button class="print-btn" onclick="window.print()">Print List</button>
+    </div>
+    <div class="links">
+      <a href="/">Customer Order Page</a>
+      <a href="/staff.html">Individual Orders</a>
+      <a href="/menu.html">Menu Editor</a>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="stats-cards">
+      <div class="stat-card">
+        <div class="stat-value" id="totalOrders">0</div>
+        <div class="stat-label">Total Orders</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="totalDrinks">0</div>
+        <div class="stat-label">Total Drinks</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="uniqueDrinks">0</div>
+        <div class="stat-label">Unique Drinks</div>
+      </div>
+    </div>
+
+    <h2 class="section-title">Stock Needed</h2>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Drink Name</th>
+            <th>Category</th>
+            <th class="center">Quantity Needed</th>
+          </tr>
+        </thead>
+        <tbody id="inventoryTable">
+          <tr>
+            <td colspan="3" class="empty-state">Loading inventory...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="empty-state" id="empty" style="display:none;">
+      <div class="empty-state-title">No orders found</div>
+      <div class="empty-state-hint">
+        Try changing the status filter to see all orders.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const pinOverlay = document.getElementById("pinOverlay");
+  const mainContainer = document.getElementById("mainContainer");
+  const pinForm = document.getElementById("pinForm");
+  const pinInput = document.getElementById("pinInput");
+  const pinError = document.getElementById("pinError");
+  const inventoryTable = document.getElementById("inventoryTable");
+  const emptyEl = document.getElementById("empty");
+  const lastUpdatedEl = document.getElementById("lastUpdated");
+  const filterEl = document.getElementById("filter");
+  const refreshBtn = document.getElementById("refreshBtn");
+  const totalOrdersEl = document.getElementById("totalOrders");
+  const totalDrinksEl = document.getElementById("totalDrinks");
+  const uniqueDrinksEl = document.getElementById("uniqueDrinks");
+
+  let authenticatedPin = null;
+  let autoRefreshInterval = null;
+
+  function esc(s) {
+    return String(s ?? "").replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[c]));
+  }
+
+  function headers() {
+    return {
+      "Content-Type": "application/json",
+      "X-Admin-Pin": authenticatedPin || ""
+    };
+  }
+
+  // PIN AUTHENTICATION
+  pinForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const pin = pinInput.value.trim();
+    
+    if (!pin) {
+      pinError.textContent = "Please enter a PIN.";
+      pinError.style.display = "block";
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "X-Admin-Pin": pin }
+      });
+
+      if (res.ok) {
+        authenticatedPin = pin;
+        pinOverlay.classList.add("hidden");
+        mainContainer.classList.add("visible");
+        await refresh();
+        startAutoRefresh();
+      } else {
+        pinError.textContent = "Incorrect PIN. Please try again.";
+        pinError.style.display = "block";
+        pinInput.value = "";
+        pinInput.focus();
+      }
+    } catch (e) {
+      pinError.textContent = "Authentication failed. Please try again.";
+      pinError.style.display = "block";
+    }
+  });
+
+  function logout() {
+    authenticatedPin = null;
+    stopAutoRefresh();
+    pinOverlay.classList.remove("hidden");
+    mainContainer.classList.remove("visible");
+    pinInput.value = "";
+    pinError.style.display = "none";
+    pinInput.focus();
+  }
+
+  function startAutoRefresh() {
+    stopAutoRefresh();
+    autoRefreshInterval = setInterval(refresh, 5000); // Refresh every 5 seconds
+  }
+
+  function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+      clearInterval(autoRefreshInterval);
+      autoRefreshInterval = null;
+    }
+  }
+
+  async function fetchOrders() {
+    const statusFilter = filterEl.value;
+    let url = '/api/orders';
+    
+    // If filter has multiple statuses (comma-separated), we need to fetch all and filter client-side
+    if (statusFilter && statusFilter.includes(',')) {
+      const res = await fetch(url, { headers: headers() });
+      if (!res.ok) throw new Error("Failed to load orders");
+      const allOrders = await res.json();
+      const allowedStatuses = statusFilter.split(',');
+      return allOrders.filter(o => allowedStatuses.includes(o.status));
+    } else if (statusFilter) {
+      url = `/api/orders?status=${encodeURIComponent(statusFilter)}`;
+    }
+    
+    const res = await fetch(url, { headers: headers() });
+    if (!res.ok) throw new Error("Failed to load orders");
+    return await res.json();
+  }
+
+  function aggregateInventory(orders) {
+    const inventory = {}; // drinkName -> { quantity, category }
+    
+    for (const order of orders) {
+      if (!Array.isArray(order.items)) continue;
+      
+      for (const item of order.items) {
+        const name = item.name || 'Unknown';
+        const category = item.category || 'Drinks';
+        
+        if (!inventory[name]) {
+          inventory[name] = {
+            quantity: 0,
+            category: category
+          };
+        }
+        
+        inventory[name].quantity += Number(item.quantity) || 0;
+      }
+    }
+    
+    // Convert to sorted array
+    const inventoryArray = Object.entries(inventory).map(([name, data]) => ({
+      name,
+      category: data.category,
+      quantity: data.quantity
+    }));
+    
+    // Sort by quantity (descending), then by name
+    inventoryArray.sort((a, b) => {
+      if (b.quantity !== a.quantity) {
+        return b.quantity - a.quantity;
+      }
+      return a.name.localeCompare(b.name);
+    });
+    
+    return inventoryArray;
+  }
+
+  function render(orders) {
+    inventoryTable.innerHTML = "";
+    
+    if (!orders || orders.length === 0) {
+      emptyEl.style.display = "block";
+      document.querySelector('.table-container').style.display = "none";
+      totalOrdersEl.textContent = "0";
+      totalDrinksEl.textContent = "0";
+      uniqueDrinksEl.textContent = "0";
+      return;
+    }
+    
+    emptyEl.style.display = "none";
+    document.querySelector('.table-container').style.display = "block";
+    
+    const inventory = aggregateInventory(orders);
+    const totalDrinkCount = inventory.reduce((sum, item) => sum + item.quantity, 0);
+    
+    // Update stats
+    totalOrdersEl.textContent = orders.length;
+    totalDrinksEl.textContent = totalDrinkCount;
+    uniqueDrinksEl.textContent = inventory.length;
+    
+    if (inventory.length === 0) {
+      inventoryTable.innerHTML = `
+        <tr>
+          <td colspan="3" style="text-align:center; color:#94a3b8; padding:40px;">
+            No drinks in selected orders
+          </td>
+        </tr>
+      `;
+      return;
+    }
+    
+    for (const item of inventory) {
+      const tr = document.createElement("tr");
+      
+      tr.innerHTML = `
+        <td>
+          <div class="drink-name">${esc(item.name)}</div>
+        </td>
+        <td>
+          <span class="category-tag">${esc(item.category)}</span>
+        </td>
+        <td class="center">
+          <span class="quantity-badge">${item.quantity}</span>
+        </td>
+      `;
+      
+      inventoryTable.appendChild(tr);
+    }
+  }
+
+  async function refresh() {
+    try {
+      const orders = await fetchOrders();
+      render(orders);
+      lastUpdatedEl.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+    } catch (e) {
+      lastUpdatedEl.textContent = `Error: ${e.message}`;
+    }
+  }
+
+  refreshBtn.addEventListener("click", refresh);
+  filterEl.addEventListener("change", refresh);
+
+  // Focus pin input on load
+  pinInput.focus();
+</script>
+
+</body>
+</html>
