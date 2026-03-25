@@ -284,11 +284,11 @@ app.patch("/api/orders/:id/fulfill", requireAdmin, async (req, res) => {
   try {
     const r = await pool.query(
       `UPDATE orders SET status='fulfilled', fulfilled_at=now()
-       WHERE id=$1
+       WHERE id=$1 AND status NOT IN ('fulfilled','cancelled')
        RETURNING id, order_number, status, fulfilled_at`,
       [id]
     );
-    if (r.rowCount === 0) return res.status(404).json({ error: "Order not found" });
+    if (r.rowCount === 0) return res.status(404).json({ error: "Order not found or already closed" });
     res.json({ ok: true, order: r.rows[0] });
   } catch {
     res.status(500).json({ error: "Failed to fulfill order" });

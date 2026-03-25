@@ -2,7 +2,7 @@
 
 A drink ordering web app built for WHS Cyber's Stemlab. Students browse a menu, place orders by name, and staff fulfill them from a live dashboard. No accounts needed — staff authenticate with a PIN.
 
-**Live instance:** `http://172.16.10.58:3000` (internal) | `drinks.velocit.ee` (Cloudflare Tunnel)
+**Live instance:** [`drinks.velocit.ee`](https://drinks.velocit.ee) (public, Cloudflare Tunnel) | `http://172.16.10.58:3000` (VLAN 10 internal)
 **Host:** dolus — Ubuntu 24.04, VLAN 10 Lab
 **Source on server:** `/home/ferry/stemlab-drinks/`
 
@@ -44,7 +44,7 @@ Browser (student / staff)
 └──────────────────────────────────────┘
 ```
 
-Deployed with Docker Compose (`compose.yml`). Both containers are managed together.
+Deployed with Docker Compose (`compose.yml`). Both containers run with `restart: unless-stopped` and are managed together.
 
 ---
 
