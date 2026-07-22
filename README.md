@@ -2,7 +2,7 @@
 
 A drink ordering web app built for WHS Cyber's Stemlab. Students browse a menu, place orders by name, and staff fulfill them from a live dashboard. No accounts needed — staff authenticate with a PIN.
 
-**Live instance:** [`drinks.velocit.ee`](https://drinks.velocit.ee) (public, Cloudflare Tunnel) | `http://172.16.10.58:3000` (VLAN 10 internal)
+**Live instance:** [`drinks.whslab.net`](https://drinks.whslab.net) (public, Cloudflare Tunnel) | `http://172.16.10.58:3000` (VLAN 10 internal)
 **Host:** dolus — Ubuntu 24.04, VLAN 10 Lab
 **Source on server:** `/home/ferry/stemlab-drinks/`
 
@@ -91,7 +91,7 @@ On first start, PostgreSQL runs the schema migration at `db/init/001_schema.sql`
 | `POSTGRES_DB` | — | PostgreSQL database name |
 | `POSTGRES_USER` | — | PostgreSQL username |
 | `POSTGRES_PASSWORD` | — | PostgreSQL password |
-| `ADMIN_PIN` | `4321` | Staff PIN for all admin endpoints |
+| `ADMIN_PIN` | — (required, app fails to start if unset) | Staff PIN for all admin endpoints |
 | `ORDER_RETENTION_HOURS` | `24` | Orders older than this are auto-purged |
 | `PORT` | `3000` | Port the backend listens on |
 

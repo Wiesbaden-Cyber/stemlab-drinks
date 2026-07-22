@@ -1,7 +1,7 @@
 FROM node:20-alpine
 WORKDIR /app
-COPY package.json ./
-RUN npm install
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
 COPY src ./src
 RUN chown -R 1000:1000 /app
 EXPOSE 3000

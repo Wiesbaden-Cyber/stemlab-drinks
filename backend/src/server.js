@@ -38,7 +38,10 @@ const orderLimiter = rateLimit({
   message: { error: "Too many orders submitted. Please wait before trying again." }
 });
 
-const ADMIN_PIN = process.env.ADMIN_PIN || "4321";
+const ADMIN_PIN = process.env.ADMIN_PIN;
+if (!ADMIN_PIN) {
+  throw new Error("ADMIN_PIN must be set");
+}
 
 function requireAdmin(req, res, next) {
   const pin = req.header("X-Admin-Pin");
@@ -67,7 +70,7 @@ app.get("/api/menu", async (req, res) => {
 });
 
 // -------- MENU (admin write) --------
-app.post("/api/menu", requireAdmin, async (req, res) => {
+app.post("/api/menu", authLimiter, requireAdmin, async (req, res) => {
   const { name, price, is_available, sort_order, category, notes } = req.body || {};
   if (typeof name !== "string" || !name.trim()) return res.status(400).json({ error: "Bad name" });
 
@@ -94,7 +97,7 @@ app.post("/api/menu", requireAdmin, async (req, res) => {
   }
 });
 
-app.patch("/api/menu/:id", requireAdmin, async (req, res) => {
+app.patch("/api/menu/:id", authLimiter, requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Bad id" });
 
@@ -130,7 +133,7 @@ app.patch("/api/menu/:id", requireAdmin, async (req, res) => {
   }
 });
 
-app.delete("/api/menu/:id", requireAdmin, async (req, res) => {
+app.delete("/api/menu/:id", authLimiter, requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Bad id" });
 
@@ -240,7 +243,7 @@ app.post("/api/orders", orderLimiter, async (req, res) => {
 });
 
 // Orders + items for staff
-app.get("/api/orders", requireAdmin, async (req, res) => {
+app.get("/api/orders", authLimiter, requireAdmin, async (req, res) => {
   const { status } = req.query;
   const allowed = new Set(["new", "in_progress", "fulfilled", "cancelled"]);
   const where = status && allowed.has(status) ? "WHERE o.status = $1" : "";
@@ -277,7 +280,7 @@ app.get("/api/orders", requireAdmin, async (req, res) => {
   }
 });
 
-app.patch("/api/orders/:id/fulfill", requireAdmin, async (req, res) => {
+app.patch("/api/orders/:id/fulfill", authLimiter, requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Bad id" });
 
@@ -295,7 +298,7 @@ app.patch("/api/orders/:id/fulfill", requireAdmin, async (req, res) => {
   }
 });
 
-app.patch("/api/orders/:id/cancel", requireAdmin, async (req, res) => {
+app.patch("/api/orders/:id/cancel", authLimiter, requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Bad id" });
 
@@ -314,7 +317,7 @@ app.patch("/api/orders/:id/cancel", requireAdmin, async (req, res) => {
 });
 
 // -------- ORDER MANAGEMENT --------
-app.delete("/api/orders", requireAdmin, async (req, res) => {
+app.delete("/api/orders", authLimiter, requireAdmin, async (req, res) => {
   try {
     const r = await pool.query(`DELETE FROM orders`);
     console.log(`[flush] Manually deleted ${r.rowCount} orders`);
